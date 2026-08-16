@@ -123,7 +123,19 @@ window.PAGES = [
 </ol>
 `},
 
-{ n:11, title:"2# Outside the Light", nav:"2# Outside the Light", text:`
+{ n:11, title:"2# Outside the Light", nav:"2# Outside the Light",
+  /* The page image is split in two at a blank strip under the header band
+     (y = 298 / 2339) and the player bar is set into the gap, so it sits where
+     it was marked without covering a single word. Nothing is cropped:
+     p11a + p11b add back up to the whole page. */
+  split:{ a:"p11a", b:"p11b" },
+  audio:{
+    label:"Song 2 — Outside the Light",
+    sub:"Demo",
+    m4a:"audio/song02-outside-the-light.m4a",
+    mp3:"audio/song02-outside-the-light.mp3"
+  },
+  text:`
 <h2>2# Outside the Light</h2>
 <div class="lyric">
 <p><b>PAE JUN-HYUK:</b><br>I Still remember<br>The tales I read from the book<br>About the revolution for the poor<br>The heroes lit all the world<br>But look where I am<br>waving a wooden fork<br>The haze veils my face<br>A face the story overlooked</p>
@@ -135,15 +147,15 @@ window.PAGES = [
 <p><b>TOGETHER:</b><br>I want to be seen.</p>
 <p><b>RYOKO:</b><br>I want to step into the light, find my scene</p>
 <p><b>PAE JUN-HYUK:</b><br>Be found by history<br>In ink that's evergreen<br>To write my meaning</p>
+<p><b>RYOKO:</b><br>When I once read the story<br>Even the villain had a place<br>The scary dragon and the witch<br>They all had a proper face<br>Even the talking sparrow<br>Or the gauzy pixie<br>Each voice woven in the tale<br>Yet out of reach for me</p>
+<p><b>JUN-HYUK:</b><br>I never tread upon my land<br>Never matching the steady pace.<br>In this jungle of stone and steel<br>Leaving not a single trace</p>
 <p><b>RYOKO:</b><br>I'm still waiting for this</p>
 <p><b>PAE JUN-HYUK:</b><br>A moment Burst ablaze!</p>
 <p><b>TOGETHER:</b><br>To strike a single spark<br>To touch a moment of grace.</p>
 <p><b>TOGETHER:</b><br>I want to be seen<br>No need to be, the center of the scene<br>even the only gleam<br>just a dim light by me<br>I'm here</p>
 <p><b>JUN-HYUK:</b><br>When you open the book</p>
 <p><b>RYOKO:</b><br>Find a fragment of me, I will be satisfied.</p>
-<p><b>TOGETHER:</b><br>just three lines</p>
-<p><b>RYOKO:</b><br>When I once read the story<br>Even the villain had a place<br>The scary dragon and the witch<br>They all had a proper face<br>Even the talking sparrow<br>Or the gauzy pixie<br>Each voice woven in the tale<br>Yet out of reach for me</p>
-<p><b>JUN-HYUK:</b><br>I never tread upon my land<br>Never matching the steady pace.<br>In this jungle of stone and steel<br>Leaving not a single trace</p>
+<p><b>TOGETHER:</b><br>just three lines.</p>
 </div>
 `},
 
@@ -212,12 +224,14 @@ window.PAGES = [
 
 { n:15, title:"Special Thanks & Get in Touch", nav:"Thanks & Contact", text:`
 <h2>Special Thanks</h2>
-<p class="ctr">Xiaoqun Zhang<br>E.T.ertainment Error<br>Tianxin Zhang<br>Zixi Peng<br>Yaxuan Zhao<br>Haiyang XU<br>Youqin Tu</p>
+<p class="ctr">Xiaoqun Zhang<br>E.T.ertainment Error<br>Tianxin Zhang<br>Zixi Peng<br>Yaxuan Zhao<br>Haiyang XU<br>Youqin Tu<br>Ruyu Li<br>Ranwen Xue<br>Sherly</p>
 <h2>Get in Touch</h2>
 <p class="ctr">
 E-mail: <a href="mailto:fivedaysmore.prod@gmail.com">fivedaysmore.prod@gmail.com</a><br>
 Instagram: <a href="https://instagram.com/fivedaysmore" target="_blank" rel="noopener">@fivedaysmore</a><br>
 Rednote: 27213621402
 </p>
+<h2>Feedback</h2>
+<p class="ctr"><a class="btnlink" href="https://docs.google.com/forms/d/e/1FAIpQLSfZEe81u6SDYAxDqnMqLqA0UwceF3Op86FeKLxRM45hcHbuBg/viewform" target="_blank" rel="noopener">Tell us what you thought &rarr;</a></p>
 `}
 ];

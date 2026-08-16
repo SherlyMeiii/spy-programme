@@ -6,7 +6,10 @@ unaltered** — the site adds navigation, zoom, and a text view on top of it.
 ```
 spy-site/
 ├── index.html     the whole site (no build step, no dependencies)
-├── content.js     transcribed page text, used for the "Text" view
+├── content.js     transcribed page text + audio setup
+├── audio/
+│   ├── song02-outside-the-light.m4a   AAC 96k · 2.1 MB · used by default
+│   └── song02-outside-the-light.mp3   MP3 128k · 2.8 MB · fallback
 └── img/           45 files — 15 pages × 3 versions
     ├── pNN.webp     1080px  · what you see by default
     ├── pNN.jpg      1080px  · fallback for very old browsers
@@ -16,13 +19,63 @@ spy-site/
 ## What it does
 
 - **Swipe / arrow keys** to turn pages, exactly like the PDF
+- **Every page is shown whole** — scaled to fit the screen, never cropped, nothing laid on top
 - **Tap any page** to open it full-screen; tap again to zoom to 230%, pinch to scale further
+- **Audio on page 11** (*2# Outside the Light*) — the page image is cut in two at a blank
+  strip below the header band (y = 298 of 2339) and the player bar is set into the seam,
+  styled in the same cream paper with stitched dashes. It covers no words, and tapping play
+  changes nothing about the layout. Nothing downloads until play is pressed
+  (`preload="none"`), so the audio is free for visitors who never press it.
 - **Contents menu** (☰) jumps straight to Cast, Song list, individual songs, etc.
-- **"Text" button** re-flows the transcribed text into a single readable column —
-  built for the two-column lyric pages, which are hard to read on a phone.
-  The cover and the two photo-gallery pages stay as images in either mode.
+  Pages with a demo are marked ♪ in the menu and gold in the page dots.
 - **Deep links**: `…/#p11` opens page 11 directly
 - Lazy loading — only the current page ±1 is downloaded, so it opens fast on venue wifi
+
+`content.js` still carries the full transcribed text of every page. Nothing renders it at
+the moment, but it is there if you ever want a text/accessibility view back.
+
+## Adding more song demos
+
+Two steps. First cut the page image at a blank horizontal strip and save the two halves
+as `pNNa` / `pNNb` (this script picks the cleanest row for you):
+
+```bash
+python3 - <<'PY'
+from PIL import Image
+import numpy as np
+PAGE, LO, HI = 12, 0.10, 0.15        # page number, and the band to look for a gap in
+src = Image.open(f'/tmp/new/n-{PAGE}.png').convert('RGB'); W,H = src.size
+ink = (np.asarray(src.convert('L')) < 190)
+CUT = min(range(int(H*LO), int(H*HI)), key=lambda y: ink[y].sum())
+print('cut at', CUT, 'ink on that row:', ink[CUT].sum())
+for name, part in (('a', src.crop((0,0,W,CUT))), ('b', src.crop((0,CUT,W,H)))):
+    r = part.resize((1080, round(part.height*1080/part.width)), Image.LANCZOS)
+    r.save(f'img/p{PAGE:02d}{name}.webp','WEBP',quality=68,method=6)
+    r.save(f'img/p{PAGE:02d}{name}.jpg','JPEG',quality=78,optimize=True,progressive=True)
+    print(f'p{PAGE:02d}{name}', part.size, '->', r.size)
+PY
+```
+
+Then add `split` + `audio` to that page in `content.js`:
+
+```js
+{ n:12, title:"7# Wiping the Floor", nav:"…",
+  split:{ a:"p12a", b:"p12b" },
+  audio:{
+    label:"Song 7 — Wiping the Floor",
+    sub:"Demo",
+    m4a:"audio/song07.m4a",
+    mp3:"audio/song07.mp3"
+  } }
+```
+
+Also update the two `mkImg(p.split.a, 1080, …)` heights in `index.html` to the printed
+slice sizes, so the browser reserves the right space. Converting a WAV:
+
+```bash
+ffmpeg -i song.wav -c:a aac  -b:a  96k -movflags +faststart audio/song07.m4a
+ffmpeg -i song.wav -c:a libmp3lame -b:a 128k              audio/song07.mp3
+```
 
 ## Preview locally
 
