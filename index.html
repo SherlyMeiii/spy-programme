@@ -75,14 +75,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
    and the tappable areas line up with the artwork at any screen size. */
 .frame{
   position:relative;display:flex;flex-direction:column;max-height:100%;
-  border-radius:6px;overflow:hidden;
+  border-radius:6px;overflow:hidden;background:#2f2620;
   box-shadow:0 10px 34px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+  /* the page fades in as ONE piece — otherwise the player bar, which is plain
+     HTML, would paint before the image slices had finished downloading */
+  opacity:0;transition:opacity .26s ease;
 }
-.frame img{
-  display:block;width:100%;height:auto;background:#2f2620;
-  opacity:0;transition:opacity .35s ease;
-}
-.frame img.ready{opacity:1}
+.frame.ready{opacity:1}
+.frame img{display:block;width:100%;height:auto}
 /* tappable areas laid over the QR codes and contact lines on the last page */
 .hot{position:absolute;z-index:4;display:block;border-radius:9px}
 .hot::after{
@@ -271,7 +271,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <div id="lbTip">Tap image to zoom · pinch to scale</div>
 </div>
 
-<script src="content.js?v=6"></script>
+<script src="content.js?v=7"></script>
 <script>
 (function(){
   var P = window.PAGES, N = P.length;
@@ -386,6 +386,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     var stage = document.createElement('div');
     stage.className = 'stage';
 
+    var pending = 0, shown = false;
+    function reveal(){ if(!shown && pending <= 0){ shown = true; frame.classList.add('ready'); } }
     function mkImg(base, w, h){
       var im = document.createElement('img');
       im.alt = 'Page ' + p.n + ' — ' + p.title;
@@ -394,9 +396,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       im.dataset.src = 'img/' + base + '.webp';
       im.dataset.jpg = 'img/' + base + '.jpg';
       im.dataset.big = 'img/p' + pad + '@2x.webp';
-      im.addEventListener('load', function(){ im.classList.add('ready'); });
+      pending++;
+      var settled = false;
+      function done(){ if(settled) return; settled = true; pending--; reveal(); }
+      im.addEventListener('load', done);
       im.addEventListener('error', function(){
-        if(im.src.indexOf('.webp') > -1) im.src = im.dataset.jpg;
+        if(im.src.indexOf('.webp') > -1){ im.src = im.dataset.jpg; return; }  // retry as jpeg
+        done();                                                               // gave up
       });
       im.addEventListener('click', function(){ openLB(im); });
       return im;
@@ -467,11 +473,21 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     });
   }
 
-  function loadImgs(i){
-    for(var k = Math.max(0, i-1); k <= Math.min(N-1, i+1); k++){
-      var ims = secs[k].querySelectorAll('.stage img');
-      for(var j=0;j<ims.length;j++){ if(!ims[j].src) ims[j].src = ims[j].dataset.src; }
+  function loadPage(k){
+    if(k < 0 || k >= N) return false;
+    var ims = secs[k].querySelectorAll('.stage img'), started = false;
+    for(var j=0;j<ims.length;j++){
+      if(!ims[j].src){ ims[j].src = ims[j].dataset.src; started = true; }
     }
+    return started;
+  }
+  /* keep two pages either side ready, so turning a page never shows a half-built
+     one — the split pages in particular must arrive complete, bar and all */
+  function loadImgs(i){ for(var k = i-2; k <= i+2; k++) loadPage(k); }
+
+  /* then quietly pull in the rest, one at a time so it never hogs the connection */
+  function preloadRest(){
+    for(var k=0;k<N;k++){ if(loadPage(k)){ setTimeout(preloadRest, 350); return; } }
   }
 
   function setCur(i){
@@ -575,13 +591,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     setTimeout(goHome, 400);                // late pass: Safari restores scroll last
   });
   window.addEventListener('pageshow', function(e){ if(e.persisted) goHome(); });
-  (window.requestIdleCallback || setTimeout)(function(){
-    for(var k=0;k<Math.min(N,4);k++){
-      var ims = secs[k].querySelectorAll('.stage img');
-      for(var j=0;j<ims.length;j++){ if(!ims[j].src) ims[j].src = ims[j].dataset.src; }
-    }
-    sizeFrames();
-  }, 1200);
+  (window.requestIdleCallback || setTimeout)(function(){ preloadRest(); sizeFrames(); }, 1200);
 })();
 </script>
 </body>
