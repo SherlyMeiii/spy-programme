@@ -21,7 +21,7 @@ spy-site/
 - **Swipe / arrow keys** to turn pages, exactly like the PDF
 - **Every page is shown whole** — scaled to fit the screen, never cropped, nothing laid on top
 - **Tap any page** to open it full-screen; tap again to zoom to 230%, pinch to scale further
-- **Audio on page 11** (*2# Outside the Light*) — the page image is cut in two at a blank
+- **Audio on pages 11, 12, 13, 14** — Song 2, Song 7 (across two pages) and Song 8. Each page image is cut in two at a blank
   strip below the header band (y = 298 of 2339) and the player bar is set into the seam,
   styled in the same cream paper with stitched dashes. It covers no words, and tapping play
   changes nothing about the layout. Nothing downloads until play is pressed

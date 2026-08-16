@@ -68,22 +68,29 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   flex:1 1 auto;min-height:0;width:100%;
   display:flex;align-items:center;justify-content:center;
 }
-.stage img{
-  display:block;max-height:100%;max-width:100%;width:auto;height:auto;
-  background:#2f2620;opacity:0;transition:opacity .35s ease;
-}
-.stage img.ready{opacity:1}
-.stage > img{
-  border-radius:6px;
+/* Every page sits in a frame whose width is worked out in JS, so the player bar
+   and the tappable areas line up with the artwork at any screen size. */
+.frame{
+  position:relative;display:flex;flex-direction:column;max-height:100%;
+  border-radius:6px;overflow:hidden;
   box-shadow:0 10px 34px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
 }
-/* split page: two slices with the player set into the seam */
-.stack{
-  display:flex;flex-direction:column;border-radius:6px;overflow:hidden;
-  box-shadow:0 10px 34px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
-  max-height:100%;
+.frame img{
+  display:block;width:100%;height:auto;background:#2f2620;
+  opacity:0;transition:opacity .35s ease;
 }
-.stack img{width:100%;height:auto;max-height:none;max-width:none;border-radius:0}
+.frame img.ready{opacity:1}
+/* tappable areas laid over the QR codes and contact lines on the last page */
+.hot{position:absolute;z-index:4;display:block;border-radius:9px}
+.hot::after{
+  content:"";position:absolute;inset:0;border-radius:9px;
+  border:2px dashed rgba(147,40,28,0);background:rgba(147,40,28,0);transition:.18s;
+}
+.hot:active::after{border-color:rgba(147,40,28,.7);background:rgba(147,40,28,.10)}
+@media (hover:hover){
+  .hot{cursor:pointer}
+  .hot:hover::after{border-color:rgba(147,40,28,.45);background:rgba(147,40,28,.07)}
+}
 .zoomhint{
   flex:0 0 auto;margin:0;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
   color:var(--ink-dim);display:flex;align-items:center;gap:6px;text-align:center;
@@ -278,7 +285,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       lbTip = document.getElementById('lbTip');
   var raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window)
                                          : function(f){ return setTimeout(f, 16); };
-  var cur = 0, secs = [], splits = [];
+  var cur = 0, secs = [], frames = [];
 
   /* ================= audio ================= */
   var au = document.getElementById('au');
@@ -301,11 +308,27 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     });
   }
   function paint(el, pct){ el.style.setProperty('--pct', pct.toFixed(1) + '%'); }
+  /* Tapping a different song swaps the track. There is only ever one <audio>,
+     so the previous song stops on its own; we just wind its bars back to zero. */
   function toggle(t){
     if(track !== t){
+      var old = track;
+      au.pause();
       track = t;
+      if(old){
+        bars.forEach(function(b){
+          if(b.track !== old) return;
+          b.seek.value = 0; paint(b.seek, 0);
+          b.time.textContent = '0:00 / ' + old.dur;
+        });
+      }
+      bars.forEach(function(b){
+        if(b.track !== t) return;
+        b.seek.value = 0; paint(b.seek, 0);
+      });
       au.src = (au.canPlayType && au.canPlayType('audio/mp4')) ? t.m4a : t.mp3;
       au.play().catch(function(){});
+      refresh();
       return;
     }
     if(au.paused) au.play().catch(function(){}); else au.pause();
@@ -336,7 +359,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         '<div class="atitle"><b>' + a.label + '</b><small>' + a.sub + '</small></div>' +
         '<div class="arow">' +
           '<input class="seek" type="range" min="0" max="1000" value="0" aria-label="Seek">' +
-          '<span class="atime">0:00 / 3:02</span>' +
+          '<span class="atime">0:00 / ' + a.dur + '</span>' +
         '</div>' +
       '</div>';
     var btn = el.querySelector('.playbtn'), sk = el.querySelector('.seek'), tm = el.querySelector('.atime');
@@ -376,24 +399,40 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       return im;
     }
 
+    var frame = document.createElement('div');
+    frame.className = 'frame';
+    var bar = null;
     if(p.split && p.audio){
       /* page image cut at a blank strip; the player is set into the seam */
-      var stack = document.createElement('div');
-      stack.className = 'stack';
-      var ia = mkImg(p.split.a, 1080, 195);
-      var ib = mkImg(p.split.b, 1080, 1333);
-      var bar = makeBar(p.audio);
-      stack.appendChild(ia); stack.appendChild(bar); stack.appendChild(ib);
-      stage.appendChild(stack);
-      splits.push({stage:stage, stack:stack, bar:bar});
+      bar = makeBar(p.audio);
+      frame.appendChild(mkImg(p.split.a, 1080, p.split.ah));
+      frame.appendChild(bar);
+      frame.appendChild(mkImg(p.split.b, 1080, p.split.bh));
     } else {
-      stage.appendChild(mkImg('p'+pad, 1080, 1527));
+      frame.appendChild(mkImg('p'+pad, 1080, 1527));
     }
+
+    /* QR codes and contact lines you can just tap — you cannot scan your own screen */
+    if(p.links){
+      p.links.forEach(function(L){
+        var a = document.createElement('a');
+        a.className = 'hot';
+        a.href = L.href;
+        a.setAttribute('aria-label', L.label);
+        if(L.href.indexOf('http') === 0){ a.target = '_blank'; a.rel = 'noopener'; }
+        a.style.left = L.x; a.style.top = L.y; a.style.width = L.w; a.style.height = L.h;
+        frame.appendChild(a);
+      });
+    }
+
+    stage.appendChild(frame);
     sec.appendChild(stage);
+    frames.push({stage:stage, frame:frame, bar:bar});
 
     var hint = document.createElement('p');
     hint.className = 'zoomhint';
-    hint.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg> Page ' + p.n + ' / ' + N + ' — tap to enlarge';
+    hint.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/></svg> Page ' + p.n + ' / ' + N +
+      (p.links ? ' — tap the QR codes to open them' : ' — tap to enlarge');
     sec.appendChild(hint);
 
     deck.appendChild(sec);
@@ -413,15 +452,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   var dotEls = dots.querySelectorAll('i');
   var tocEls = tocList.querySelectorAll('button');
 
-  /* the split page needs its width worked out so slices + bar fit exactly,
-     with the whole page visible. Done once per layout, never on play. */
-  function sizeSplits(){
-    splits.forEach(function(s){
-      var availH = s.stage.clientHeight, availW = s.stage.clientWidth;
+  /* Work out each frame's width so the whole page is visible, with room for the
+     player bar where there is one. Runs on layout only — never on play. */
+  function sizeFrames(){
+    frames.forEach(function(f){
+      var availH = f.stage.clientHeight, availW = f.stage.clientWidth;
       if(!availH || !availW) return;
-      var barH = s.bar.offsetHeight || 60;
+      var barH = f.bar ? (f.bar.offsetHeight || 60) : 0;
       var w = Math.min(availW, (availH - barH) * (PW/PH));
-      s.stack.style.width = Math.max(0, Math.floor(w)) + 'px';
+      f.frame.style.width = Math.max(0, Math.floor(w)) + 'px';
     });
   }
 
@@ -442,7 +481,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     prev.disabled = i === 0;
     next.disabled = i === N-1;
     loadImgs(i);
-    try{ history.replaceState(null,'','#p'+P[i].n); }catch(e){}
+    /* deliberately does NOT write the page number into the URL — otherwise the
+       link people scan would reopen on whatever page was last viewed */
   }
   function go(i){
     i = Math.max(0, Math.min(N-1, i));
@@ -504,25 +544,33 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     deck.style.scrollBehavior = 'auto';
     deck.scrollLeft = cur * deck.clientWidth;
     deck.style.scrollBehavior = '';
-    sizeSplits();
+    sizeFrames();
   }
   window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(relayout, 120); });
   window.addEventListener('orientationchange', function(){ setTimeout(relayout, 260); });
 
+  /* Always open on page 1. Only a hand-written #pN in the link overrides that. */
+  try{ if('scrollRestoration' in history) history.scrollRestoration = 'manual'; }catch(e){}
   var start = 0;
   var m = location.hash.match(/^#p(\d+)$/);
   if(m){ var want = parseInt(m[1],10); P.forEach(function(p,i){ if(p.n === want) start = i; }); }
+  function goHome(){
+    deck.style.scrollBehavior = 'auto';
+    deck.scrollLeft = start * deck.clientWidth;   // beats browser scroll restoration
+    deck.style.scrollBehavior = '';
+    sizeFrames();
+  }
   setCur(start);
-  if(start) deck.scrollLeft = start * deck.clientWidth;
-  sizeSplits();
-  raf(sizeSplits);
-  window.addEventListener('load', sizeSplits);
+  goHome();
+  raf(goHome);
+  window.addEventListener('load', function(){ goHome(); setTimeout(goHome, 120); });
+  window.addEventListener('pageshow', function(e){ if(e.persisted) goHome(); });
   (window.requestIdleCallback || setTimeout)(function(){
     for(var k=0;k<Math.min(N,4);k++){
       var ims = secs[k].querySelectorAll('.stage img');
       for(var j=0;j<ims.length;j++){ if(!ims[j].src) ims[j].src = ims[j].dataset.src; }
     }
-    sizeSplits();
+    sizeFrames();
   }, 1200);
 })();
 </script>

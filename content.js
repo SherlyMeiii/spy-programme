@@ -1,5 +1,18 @@
-/* Transcribed text of each page — used for the mobile-friendly text view.
+/* Transcribed text of each page, plus the song demos.
    The page images remain the primary, unaltered presentation. */
+
+/* One object per song. Song 7 runs across two pages, so both pages point at the
+   SAME object — that way the two bars stay in sync and count as one track. */
+var DEMO2 = { label:"Song 2 — Outside the Light",  sub:"Demo", dur:"3:02",
+              m4a:"audio/song02-outside-the-light.m4a",
+              mp3:"audio/song02-outside-the-light.mp3" };
+var DEMO7 = { label:"Song 7 — Wiping the Floor",   sub:"Demo", dur:"4:36",
+              m4a:"audio/song07-wiping-the-floor.m4a",
+              mp3:"audio/song07-wiping-the-floor.mp3" };
+var DEMO8 = { label:"Song 8 — Outside History",    sub:"Demo", dur:"6:58",
+              m4a:"audio/song08-outside-history.m4a",
+              mp3:"audio/song08-outside-history.mp3" };
+
 window.PAGES = [
 { n:1, title:"Cover", nav:"封面", text:null },
 
@@ -127,14 +140,9 @@ window.PAGES = [
   /* The page image is split in two at a blank strip under the header band
      (y = 298 / 2339) and the player bar is set into the gap, so it sits where
      it was marked without covering a single word. Nothing is cropped:
-     p11a + p11b add back up to the whole page. */
-  split:{ a:"p11a", b:"p11b" },
-  audio:{
-    label:"Song 2 — Outside the Light",
-    sub:"Demo",
-    m4a:"audio/song02-outside-the-light.m4a",
-    mp3:"audio/song02-outside-the-light.mp3"
-  },
+     the two slices add back up to the whole page. */
+  split:{ a:"p11a", b:"p11b", ah:195, bh:1333 },
+  audio: DEMO2,
   text:`
 <h2>2# Outside the Light</h2>
 <div class="lyric">
@@ -159,7 +167,8 @@ window.PAGES = [
 </div>
 `},
 
-{ n:12, title:"7# Wiping the Floor", nav:"7# Wiping the Floor", text:`
+{ n:12, title:"7# Wiping the Floor", nav:"7# Wiping the Floor",
+  split:{ a:"p12a", b:"p12b", ah:195, bh:1333 }, audio: DEMO7, text:`
 <h2>7# Wiping the Floor</h2>
 <div class="lyric">
 <p><b>CHORUS:</b><br>The final countdown starts to tick<br>The fuse is now burning down so quick!</p>
@@ -183,7 +192,9 @@ window.PAGES = [
 </div>
 `},
 
-{ n:13, title:"7# Wiping the Floor (cont.)", nav:"7# Wiping the Floor (2)", text:`
+/* same song as page 12 — shares DEMO7, so the two bars move together */
+{ n:13, title:"7# Wiping the Floor (cont.)", nav:"7# Wiping the Floor (2)",
+  split:{ a:"p13a", b:"p13b", ah:195, bh:1333 }, audio: DEMO7, text:`
 <h2>7# Wiping the Floor <span class="cont">(continued)</span></h2>
 <div class="lyric">
 <p><b>MAJOR RI:</b><br>One day, I will lay flowers on your grave,<br>Though now they hate you as a knave.<br>my power will wash your shame away—<br>A monument shall mark this day!</p>
@@ -202,7 +213,8 @@ window.PAGES = [
 </div>
 `},
 
-{ n:14, title:"8# Outside History", nav:"8# Outside History", text:`
+{ n:14, title:"8# Outside History", nav:"8# Outside History",
+  split:{ a:"p14a", b:"p14b", ah:195, bh:1333 }, audio: DEMO8, text:`
 <h2>8# Outside History</h2>
 <div class="lyric">
 <p><b>JUN-HYUK:</b><br>A nameless vendor, raised on foreign ground<br>By childhood dreams of revolution bound<br>I knew the neon filth, where souls are sold<br>I sought out something grander to uphold</p>
@@ -222,7 +234,21 @@ window.PAGES = [
 </div>
 `},
 
-{ n:15, title:"Special Thanks & Get in Touch", nav:"Thanks & Contact", text:`
+/* Tappable areas over the artwork — you cannot scan a QR code with the phone
+   that is displaying it, so both codes and the contact lines open directly.
+   Coordinates are percentages of the page image, measured from the artwork. */
+{ n:15, title:"Special Thanks & Get in Touch", nav:"Thanks & Contact",
+  links:[
+    { label:"Email the company", href:"mailto:fivedaysmore.prod@gmail.com",
+      x:"18%", y:"47.2%", w:"64%", h:"3.1%" },
+    { label:"Instagram @fivedaysmore", href:"https://instagram.com/fivedaysmore",
+      x:"28%", y:"50.1%", w:"44%", h:"2.6%" },
+    { label:"Instagram @fivedaysmore (QR)", href:"https://instagram.com/fivedaysmore",
+      x:"38.7%", y:"55.9%", w:"24.5%", h:"17.4%" },
+    { label:"Feedback form", href:"https://docs.google.com/forms/d/e/1FAIpQLSfZEe81u6SDYAxDqnMqLqA0UwceF3Op86FeKLxRM45hcHbuBg/viewform",
+      x:"39.9%", y:"79.1%", w:"22.3%", h:"15.9%" }
+  ],
+  text:`
 <h2>Special Thanks</h2>
 <p class="ctr">Xiaoqun Zhang<br>E.T.ertainment Error<br>Tianxin Zhang<br>Zixi Peng<br>Yaxuan Zhao<br>Haiyang XU<br>Youqin Tu<br>Ruyu Li<br>Ranwen Xue<br>Sherly</p>
 <h2>Get in Touch</h2>
