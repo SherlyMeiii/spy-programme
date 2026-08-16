@@ -271,7 +271,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <div id="lbTip">Tap image to zoom · pinch to scale</div>
 </div>
 
-<script src="content.js?v=7"></script>
+<script src="content.js?v=8"></script>
 <script>
 (function(){
   var P = window.PAGES, N = P.length;
@@ -464,13 +464,26 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   /* Work out each frame's width so the whole page is visible, with room for the
      player bar where there is one. Runs on layout only — never on play. */
   function sizeFrames(){
+    /* Guard: while the tab is hidden or mid-restore the stage can measure 0 or
+       near-0. Sizing from that would leave every page a sliver wide. */
+    if(deck.clientWidth < 80) return;
     frames.forEach(function(f){
       var availH = f.stage.clientHeight, availW = f.stage.clientWidth;
-      if(!availH || !availW) return;
+      if(availH < 120 || availW < 80) return;
       var barH = f.bar ? (f.bar.offsetHeight || 60) : 0;
       var w = Math.min(availW, (availH - barH) * (PW/PH));
       f.frame.style.width = Math.max(0, Math.floor(w)) + 'px';
     });
+  }
+
+  /* Re-fit without moving off the current page. Needed whenever the viewport
+     changes shape — rotation, and coming back from an external link, where the
+     browser's toolbars often return at a different height. */
+  function refit(){
+    deck.style.scrollBehavior = 'auto';
+    deck.scrollLeft = cur * deck.clientWidth;
+    deck.style.scrollBehavior = '';
+    sizeFrames();
   }
 
   function loadPage(k){
@@ -559,14 +572,27 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   });
 
   var rz;
-  function relayout(){
-    deck.style.scrollBehavior = 'auto';
-    deck.scrollLeft = cur * deck.clientWidth;
-    deck.style.scrollBehavior = '';
-    sizeFrames();
+  function refitSoon(delay){ clearTimeout(rz); rz = setTimeout(refit, delay || 120); }
+
+  window.addEventListener('resize', function(){ refitSoon(120); });
+  window.addEventListener('orientationchange', function(){ setTimeout(refit, 260); });
+
+  /* Coming back from the feedback form / Instagram on a phone: the browser
+     restores the page but its toolbars often return at a different height, so
+     every frame has to be measured again. Several signals, because which ones
+     fire depends on the browser — refit is cheap and idempotent. */
+  window.addEventListener('pageshow', function(){ refit(); setTimeout(refit, 60); setTimeout(refit, 300); });
+  window.addEventListener('focus', function(){ refitSoon(60); });
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden){ refit(); setTimeout(refit, 120); setTimeout(refit, 400); }
+  });
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){ refitSoon(80); }).observe(deck);
   }
-  window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(relayout, 120); });
-  window.addEventListener('orientationchange', function(){ setTimeout(relayout, 260); });
+  /* iOS toolbars slide away as you scroll, changing the visual viewport height */
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', function(){ refitSoon(150); });
+  }
 
   /* ALWAYS open on page 1 — no exceptions.
      Three things used to defeat this: a #pN left in the URL, the browser
@@ -590,7 +616,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     setTimeout(goHome, 100);
     setTimeout(goHome, 400);                // late pass: Safari restores scroll last
   });
-  window.addEventListener('pageshow', function(e){ if(e.persisted) goHome(); });
+  /* note: a bfcache restore (coming back from the feedback form) deliberately
+     does NOT go home — you should land back on the page you left from. That is
+     handled by the pageshow refit above. */
   (window.requestIdleCallback || setTimeout)(function(){ preloadRest(); sizeFrames(); }, 1200);
 })();
 </script>
